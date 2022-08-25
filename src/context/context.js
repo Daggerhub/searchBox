@@ -4,9 +4,10 @@ import {
   FETCH_STORIES_SUCCESS,
   SEARCH_QUERY,
   FETCH_STORIES_LOADING,
+  LOAD_MORE,
+  CLEAR_QUERY,
 } from "../constant/storyConstant";
 import fetchStoryReducer from "../reducer/fetchStoryReducer";
-
 
 const initialState = {
   loading: false,
@@ -15,31 +16,46 @@ const initialState = {
   page: 0,
   stories: [],
 };
-const Api = "http://hn.algolia.com/api/v1/search?";
+
+const Api = "https://api.unsplash.com/search/photos?";
 const AppContext = createContext();
 
 const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(fetchStoryReducer, initialState);
   let currentTime = new Date();
   
-  const checkStoryUpdate = (updatedAt) => {
-    if(((currentTime.getTime()/ 1000) - updatedAt) > 86400){
+  const checkStoryUpdate = (storyData) => {
+    if(((currentTime.getTime()/ 1000) - storyData.updatedAt) > 86400){
       localStorage.removeItem(state.query);
+      return false
+    }
+    if(!(storyData.page === state.page)){
       return false
     }
     return true;
   }
+
+  const debounce = (callback, timeout = 700) => {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        callback.apply(this, args);
+      }, timeout);
+    };
+  };
 
   const fetchData = async () => {
     try {    
       dispatch({
         type: FETCH_STORIES_LOADING,
       });
-      const data = await fetch(`${Api}query=${state.query}&page=${state.page}`);
-      const { hits } = await data.json();
+      const data = await fetch(`${Api}query=${state.query}&client_id=jYksj86D3jcLdIxFq6tSZ7ZGHMW5MBEQojUp_bzvQKA&per_page=5&page=${state.page}`);
+      const { results } = await data.json();
       const storyObj = {
-        value: hits,
-        updatedAt: currentTime.getTime() / 1000
+        value: results,
+        updatedAt: currentTime.getTime() / 1000,
+        page: state.page
       }
       localStorage.setItem(state.query, JSON.stringify(storyObj));
       dispatch({
@@ -51,6 +67,20 @@ const AppProvider = ({ children }) => {
     }
   };
 
+  const debouncedFetchFunc = debounce(() => fetchData())
+
+  const loadMore = () => {
+    dispatch({
+      type: LOAD_MORE,
+    })
+  }
+
+  const clearQuery = () => {
+    dispatch({
+      type: CLEAR_QUERY
+    })
+  }
+
   const searchStories = (query) => {
     dispatch({
       type: SEARCH_QUERY,
@@ -60,14 +90,13 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (state.query.length > 2) {
       const storyData = localStorage.getItem(state.query);
-      if(storyData !== null && checkStoryUpdate(JSON.parse(storyData).updatedAt)){
-        console.log(JSON.parse(storyData))
+      if(storyData !== null && checkStoryUpdate(JSON.parse(storyData))){
         dispatch({
           type: FETCH_STORIES_SUCCESS,
           payload: JSON.parse(storyData)
         })
       }else{
-        fetchData()
+        debouncedFetchFunc()      
       }
     }
     else{
@@ -75,9 +104,9 @@ const AppProvider = ({ children }) => {
         type: CLEAR_STORIES
       })
     }
-  }, [state.query]);
+  }, [state.query,state.page]);
   return (
-    <AppContext.Provider value={{ ...state, searchStories }}>
+    <AppContext.Provider value={{ ...state, searchStories, loadMore, clearQuery }}>
       {children}
     </AppContext.Provider>
   );
