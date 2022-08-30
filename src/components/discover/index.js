@@ -50,8 +50,8 @@ const Discover = () => {
             onClose={() => setShowSearchDropdown(false)}
           >
             <Stories />
-            {typeof stories.value !== "undefined" &&
-            stories.value.length !== 0 ? (
+            {typeof stories !== "undefined" &&
+            stories.length !== 0 ? (
               <div className="flex justify-center">
                 <Button text={"Load more"} setModal={() => loadMore()} />
               </div>
