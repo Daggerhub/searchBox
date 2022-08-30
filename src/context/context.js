@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useReducer } from "react";
+import React, { createContext, useEffect, useReducer, useCallback } from "react";
 import {
   CLEAR_STORIES,
   FETCH_STORIES_SUCCESS,
@@ -6,6 +6,7 @@ import {
   FETCH_STORIES_LOADING,
   LOAD_MORE,
   CLEAR_QUERY,
+  NO_STORIES_FOUND
 } from "../constant/storyConstant";
 import fetchStoryReducer from "../reducer/fetchStoryReducer";
 
@@ -15,6 +16,7 @@ const initialState = {
   numberOfPages: 0,
   page: 0,
   stories: [],
+  noResult: false
 };
 
 const Api = "https://api.unsplash.com/search/photos?";
@@ -35,13 +37,15 @@ const AppProvider = ({ children }) => {
     return true;
   }
 
-  const debounce = (callback, timeout = 700) => {
+  const debounce = (func) => {
     let timer;
-    return (...args) => {
-      clearTimeout(timer);
+    return function (...args) {
+      const context = this;
+      if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        callback.apply(this, args);
-      }, timeout);
+        timer = null;
+        func.apply(context, args);
+      }, 1000);
     };
   };
 
@@ -57,17 +61,22 @@ const AppProvider = ({ children }) => {
         updatedAt: currentTime.getTime() / 1000,
         page: state.page
       }
+
       localStorage.setItem(state.query, JSON.stringify(storyObj));
+      if(results.length === 0) {
+        dispatch({
+          type: NO_STORIES_FOUND,
+        })
+      }
+
       dispatch({
         type: FETCH_STORIES_SUCCESS,
-        payload: storyObj,
+        payload: results
       });
     } catch (error) {
       throw new Error("Some error")
     }
   };
-
-  const debouncedFetchFunc = debounce(() => fetchData())
 
   const loadMore = () => {
     dispatch({
@@ -75,7 +84,8 @@ const AppProvider = ({ children }) => {
     })
   }
 
-  const clearQuery = () => {
+  const clearQuery = function(inputRef){
+    inputRef.current.value = ""
     dispatch({
       type: CLEAR_QUERY
     })
@@ -87,16 +97,20 @@ const AppProvider = ({ children }) => {
       payload: query,
     });
   };
+
+  const optimizedFn = debounce(searchStories)
+
   useEffect(() => {
     if (state.query.length > 2) {
       const storyData = localStorage.getItem(state.query);
+      const data = JSON.parse(storyData)
       if(storyData !== null && checkStoryUpdate(JSON.parse(storyData))){
         dispatch({
           type: FETCH_STORIES_SUCCESS,
-          payload: JSON.parse(storyData)
+          payload: data.value
         })
       }else{
-        debouncedFetchFunc()      
+        fetchData()      
       }
     }
     else{
@@ -106,7 +120,7 @@ const AppProvider = ({ children }) => {
     }
   }, [state.query,state.page]);
   return (
-    <AppContext.Provider value={{ ...state, searchStories, loadMore, clearQuery }}>
+    <AppContext.Provider value={{ ...state, optimizedFn,searchStories, loadMore, clearQuery }}>
       {children}
     </AppContext.Provider>
   );

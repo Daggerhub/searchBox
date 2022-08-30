@@ -1,8 +1,21 @@
 import React, { useContext } from "react";
-import { AppContext } from "../../context";
+import { motion, Variants } from "framer-motion";
 
 const SearchDropdown = ({ children, visible, onClose }) => {
-  // const { loading } = useContext(AppContext);
+
+  const cardVariants = {
+    offscreen: {
+      y: 20
+    },
+    onscreen: {
+      y: 0,
+      transition: {
+        type: "spring",
+        duration: 0.5
+      }
+    }
+  };
+
   if (!visible) return null;
   const handleOnBackDropClick = (e) => {
     if (e.target.id === "backdropEle") onClose && onClose();
@@ -14,9 +27,12 @@ const SearchDropdown = ({ children, visible, onClose }) => {
         id="backdropEle"
         onClick={handleOnBackDropClick}
       ></div>
-    <div className="absolute w-[300px] bg-white shadow-md top-12 min-h-[60px] max-h-[400px] overflow-scroll p-2 -right-4">
+    <motion.div className="absolute w-[300px] bg-white shadow-md top-12 min-h-[60px] max-h-[400px] overflow-scroll p-2 -right-4" variants={cardVariants} 
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.6 }}>
       {children}
-    </div>
+    </motion.div>
     </>
   );
 };

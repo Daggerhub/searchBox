@@ -5,7 +5,7 @@ import Modal from "../modal";
 import SearchBox from "../searchBox";
 import Stories from "../stories";
 import SearchDropdown from "../storyDropdown";
-import { TiDeleteOutline as DeleteIcon } from "react-icons/ti";
+import { GrClose as DeleteIcon } from "react-icons/gr";
 
 const Discover = () => {
   const { stories, loadMore } = useContext(AppContext);
@@ -17,7 +17,7 @@ const Discover = () => {
         <div>
           <h1 className="text-[21px] text-[#2f363f]">Discover</h1>
         </div>
-        <Button setModal={(e) => { e.preventDefault(); setShowModal(true)}} text={"Search"} />
+        <Button setModal={(e) => {setShowModal(true)}} text={"Search"} />
         <Modal onClose={() => setShowModal(false)} visible={showModal}>
           <div className="flex justify-between items-center">
             <h1 className="py-2">Search Smallcase</h1>
@@ -27,8 +27,8 @@ const Discover = () => {
           </div>
           <SearchBox />
           <Stories />
-          {typeof stories.value !== "undefined" &&
-            stories.value.length !== 0 ? (
+          {typeof stories !== "undefined" &&
+            stories.length !== 0 ? (
               <div className="flex justify-center">
                 <Button text={"Load more"} setModal={() => loadMore()} />
               </div>

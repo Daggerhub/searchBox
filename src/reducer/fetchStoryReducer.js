@@ -1,4 +1,4 @@
-import {FETCH_STORIES_LOADING, FETCH_STORIES_SUCCESS, SEARCH_QUERY, CLEAR_STORIES, LOAD_MORE, CLEAR_QUERY} from "../constant/storyConstant"
+import {FETCH_STORIES_LOADING, FETCH_STORIES_SUCCESS,NO_STORIES_FOUND, SEARCH_QUERY, CLEAR_STORIES, LOAD_MORE, CLEAR_QUERY} from "../constant/storyConstant"
 const fetchStoryReducer = (state, action) => {
     switch (action.type) {
         case FETCH_STORIES_LOADING:
@@ -9,9 +9,14 @@ const fetchStoryReducer = (state, action) => {
         case FETCH_STORIES_SUCCESS:
             return {
                 ...state,
-                stories: action.payload,
+                stories: [...state.stories , ...action.payload],
                 loading: false,
-            } 
+            }   
+        case NO_STORIES_FOUND:
+            return {
+                ...state,
+                noResult:true
+            }    
         case SEARCH_QUERY:
             return {
                 ...state,

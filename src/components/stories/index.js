@@ -1,41 +1,55 @@
 import React, { useContext } from "react";
 import { AppContext } from "../../context";
 import Story from "../story";
+import { motion } from "framer-motion";
+
 const Stories = () => {
-  const { stories, loading } = useContext(AppContext);
-  if (typeof (stories.value) === "undefined") {
+  
+  const { stories, loading, noResult } = useContext(AppContext);
+  if (typeof (stories) === "undefined") {
     return <></>;
   }
 
-  if (stories.value.length === 0) {
-    return <h1>No result found</h1>;
+  if (noResult) {
+    return <h1 className="py-4" >No result found</h1>;
   }
-  const handleKeyDown = (index) => (e) => {
-    switch (e.key) {
-      case " ":
-      case "SpaceBar":
-      case "Enter":
-        e.preventDefault();
-        setSelectedOption(index);
-        setIsOptionsOpen(false);
-        break;
-      default:
-        break;
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        delayChildren: 0.8,
+        staggerDirection: -1
+      }
     }
-};
+  }
+  
+  const item = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1 }
+  }
+
 
   return (
     <>
       {loading ? (
         <h1>Loading...</h1>
       ) : (
-        stories.value?.map((story,index) => {
+        stories.length === 0 ? <h1 className="py-4">Type atleast 3 characters to search</h1>
+        :
+        <motion.ul
+        variants={container}
+        initial="hidden"
+        animate="show"
+      >        {stories?.map((story,index) => {
           return (
-            <div className="py-4" key={index} onKeyDown={handleKeyDown(index)}>
+            <motion.li variants={item} size={50}  className="py-4" key={index}>
               <Story data={story} />
-            </div>
+            </motion.li>
           );
-        })
+        })}
+        </motion.ul>
       )}
     </>
   );
